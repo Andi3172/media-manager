@@ -16,6 +16,15 @@ import project.services.LocationService;
 import project.exceptions.InvalidLocationException;
 
 
+/**
+ * Main application frame which provides the GUI for the Media Manager.
+ * <p>
+ * The frame exposes a list of monitored locations and a list of discovered
+ * media files. Users can add/remove monitored folders and trigger a rescan.
+ * The class coordinates {@link project.services.LocationService} and
+ * {@link project.services.FileScanner} and runs scanning on a background
+ * thread to avoid blocking the Swing event dispatch thread.
+ */
 public class MainFrame extends JFrame{
     ///logic services
     private final LocationService locationService;
@@ -39,6 +48,10 @@ public class MainFrame extends JFrame{
 
     private final ExecutorService scanExecutor;
 
+    /**
+     * Constructs the main application frame, initializes services and GUI,
+     * and triggers an initial load of configured locations.
+     */
     public MainFrame(){
         this.locationService = new LocationService("location.txt");
         this.fileScanner = new FileScanner(supportedFileTypes);
@@ -76,6 +89,12 @@ public class MainFrame extends JFrame{
     }
 
     private Component createLocationPanel(){
+        /**
+         * Create the left-side panel that shows monitored locations and
+         * buttons to add/remove locations.
+         *
+         * @return the constructed location panel
+         */
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(new EmptyBorder(10, 10, 10, 5));
         panel.add(new JLabel("Monitored Locations:"), BorderLayout.NORTH);
@@ -99,6 +118,12 @@ public class MainFrame extends JFrame{
 
 
     private Component createFilesPanel(){
+        /**
+         * Create the right-side panel that lists found files and exposes the
+         * "Refresh Files" control.
+         *
+         * @return the constructed files panel
+         */
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(new EmptyBorder(10, 5, 10, 10));
         panel.add(new JLabel("Files found:"), BorderLayout.NORTH);
@@ -116,6 +141,10 @@ public class MainFrame extends JFrame{
     }
 
     private void setupWindowListeners(){
+        /**
+         * Setup listeners for window events (save on close) and resource
+         * cleanup.
+         */
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e){
@@ -139,6 +168,10 @@ public class MainFrame extends JFrame{
     }
 
     private void loadInitialData(){
+        /**
+         * Load configured locations from the configuration file and refresh
+         * the file list. Any configuration errors are shown to the user.
+         */
         lblStatus.setText("Loading locations...");
         try{
             locationService.loadLocations();
@@ -165,6 +198,11 @@ public class MainFrame extends JFrame{
     }
 
     private void addLocationAction(){
+        /**
+         * Open a directory chooser to add a new monitored location. If the
+         * selected path is valid it will be persisted by the
+         * {@link project.services.LocationService}.
+         */
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         chooser.setDialogTitle("Select a folder to be monitored");
@@ -189,6 +227,10 @@ public class MainFrame extends JFrame{
     }
 
     private void removeLocationAction(){
+        /**
+         * Remove the currently selected monitored location and update the
+         * displayed file list.
+         */
         int selectedIndex = locationList.getSelectedIndex();
         if(selectedIndex == -1){
             JOptionPane.showMessageDialog(this, "Please select a location to remove.", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -202,6 +244,11 @@ public class MainFrame extends JFrame{
     }
 
     private void refreshFilesAction(){
+        /**
+         * Trigger a background scan of all monitored locations. Results are
+         * published back on the Swing event dispatch thread and the UI is
+         * updated accordingly.
+         */
         lblStatus.setText("Scanning files...");
         btnRefreshFiles.setEnabled(false);
         filesListModel.clear();
@@ -234,6 +281,10 @@ public class MainFrame extends JFrame{
     }
 
     private void updateLocationListModel(){
+        /**
+         * Refresh the locations JList model from the current state of the
+         * {@link project.services.LocationService}.
+         */
         locationListModel.clear();
         for (Path path : locationService.getMonitoredLocations()){
             locationListModel.addElement(path.toString());
@@ -241,6 +292,12 @@ public class MainFrame extends JFrame{
     }
 
     private void generateReport(List<MediaFile> files){
+        /**
+         * Produce a simple console report that summarises the number of files
+         * discovered per supported extension.
+         *
+         * @param files list of discovered media files
+         */
         for (int i = 0; i< supportedFileTypes.length; i++){
             fileTypeCounts[i] = 0;
         }
